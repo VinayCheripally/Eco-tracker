@@ -49,6 +49,7 @@ export default function LoginScreen() {
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
+            placeholderTextColor={Colors.neutral.grey5}
           />
         </View>
 
@@ -60,6 +61,7 @@ export default function LoginScreen() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            placeholderTextColor={Colors.neutral.grey5}
           />
         </View>
 
@@ -123,8 +125,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     height: 56,
-    borderWidth: 1,
-    borderColor: Colors.neutral.grey3,
   },
   input: {
     flex: 1,

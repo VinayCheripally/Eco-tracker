@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import Colors from '../../constants/Colors';
-import { LogOut, Edit2, Save, X } from 'lucide-react-native';
+import { LogOut, CreditCard as Edit2, Save, X } from 'lucide-react-native';
 
 export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
