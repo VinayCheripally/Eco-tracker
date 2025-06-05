@@ -1,46 +1,98 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { Send } from 'lucide-react-native';
 import Colors from '../../constants/Colors';
 import ActivityCard from '../../components/ActivityCard';
 import { Activity } from '../../types';
 import { calculateCarbonImpact } from '../../utils/carbonCalculator';
-import { mockActivities } from '../../data/mockData';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function LogScreen() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activities, setActivities] = useState<Activity[]>(mockActivities);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const { session } = useAuth();
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    fetchActivities();
+  }, []);
+
+  async function fetchActivities() {
+    try {
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('user_id', session?.user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching activities:', error);
+        return;
+      }
+
+      if (data) {
+        const formattedActivities: Activity[] = data.map(activity => ({
+          id: activity.id,
+          description: activity.description,
+          date: activity.created_at,
+          carbonImpact: activity.co2_score,
+          category: activity.category,
+          createdAt: activity.created_at
+        }));
+        setActivities(formattedActivities);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  const handleSubmit = async () => {
     if (!inputText.trim()) {
       return;
     }
 
     setIsLoading(true);
 
-    // Simulate API processing time
-    setTimeout(() => {
-      try {
-        const { carbonImpact, category } = calculateCarbonImpact(inputText);
-        
+    try {
+      const { carbonImpact, category } = calculateCarbonImpact(inputText);
+      
+      const { data, error } = await supabase
+        .from('activities')
+        .insert([
+          {
+            user_id: session?.user?.id,
+            description: inputText,
+            category: category,
+            co2_score: carbonImpact
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        Alert.alert('Error', 'Could not save activity. Please try again.');
+        return;
+      }
+
+      if (data) {
         const newActivity: Activity = {
-          id: Date.now().toString(),
-          description: inputText,
-          date: new Date().toISOString(),
-          carbonImpact,
-          category,
-          createdAt: new Date().toISOString(),
+          id: data.id,
+          description: data.description,
+          date: data.created_at,
+          carbonImpact: data.co2_score,
+          category: data.category,
+          createdAt: data.created_at,
         };
 
         setActivities([newActivity, ...activities]);
         setInputText('');
-      } catch (error) {
-        Alert.alert('Error', 'Could not process activity. Please try again.');
-      } finally {
-        setIsLoading(false);
       }
-    }, 1000);
+    } catch (error) {
+      Alert.alert('Error', 'Could not process activity. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
