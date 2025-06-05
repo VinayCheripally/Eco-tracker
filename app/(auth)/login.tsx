@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import { Link, router } from 'expo-router';
 import Colors from '../../constants/Colors';
 import { Mail, Lock } from 'lucide-react-native';
+import { supabase } from '../../lib/supabase';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -19,22 +27,36 @@ export default function LoginScreen() {
     setIsLoading(true);
     setError('');
 
-    try {
-      // TODO: Implement actual login logic with Supabase
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+    if (error) {
+      setError('Invalid username or password');
+    } else {
       router.replace('/(tabs)');
-    } catch (err) {
-      setError('Invalid email or password');
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
+
+    // try {
+    //   // TODO: Implement actual login logic with Supabase
+    //   await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
+    //   router.replace('/(tabs)');
+    // } catch (err) {
+    //   setError('Invalid email or password');
+    // } finally {
+    //   setIsLoading(false);
+    // }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Welcome Back!</Text>
-        <Text style={styles.subtitle}>Sign in to continue tracking your eco-friendly journey</Text>
+        <Text style={styles.subtitle}>
+          Sign in to continue tracking your eco-friendly journey
+        </Text>
       </View>
 
       <View style={styles.form}>

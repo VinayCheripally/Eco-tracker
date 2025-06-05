@@ -4,16 +4,18 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "EXPO_NO_TELEMETRY=1 npx expo start",
+    "dev": "SET EXPO_NO_TELEMETRY=1 npx expo start",
     "build:web": "expo export --platform web",
     "lint": "expo lint"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
     "@lucide/lab": "^0.1.2",
+    "@react-native-async-storage/async-storage": "2.1.2",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
-    "@supabase/supabase-js": "^2.39.8",
+    "@rneui/themed": "^4.0.0-rc.8",
+    "@supabase/supabase-js": "^2.49.9",
     "expo": "^53.0.0",
     "expo-blur": "~14.1.3",
     "expo-camera": "~16.1.5",

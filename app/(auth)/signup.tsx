@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import { Link, router } from 'expo-router';
 import Colors from '../../constants/Colors';
 import { Mail, Lock, User } from 'lucide-react-native';
+import { supabase } from '../../lib/supabase';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
@@ -25,22 +33,30 @@ export default function SignupScreen() {
     setIsLoading(true);
     setError('');
 
-    try {
-      // TODO: Implement actual signup logic with Supabase
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          full_name: name,
+        },
+      },
+    });
+    if (error) {
+      setError('The email is already used.');
+    } else {
       router.replace('/(tabs)');
-    } catch (err) {
-      setError('Failed to create account. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Join us in making a positive environmental impact</Text>
+        <Text style={styles.subtitle}>
+          Join us in making a positive environmental impact
+        </Text>
       </View>
 
       <View style={styles.form}>
