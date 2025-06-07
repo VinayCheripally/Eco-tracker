@@ -1,42 +1,91 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Colors from '../constants/Colors';
+import { Activity } from '../types';
 
 interface ProgressChartProps {
   period: 'week' | 'month' | 'year';
+  activities: Activity[];
 }
 
-export default function ProgressChart({ period }: ProgressChartProps) {
-  // Mock data generation based on selected period
+export default function ProgressChart({ period, activities }: ProgressChartProps) {
+  // Generate chart data based on real activities
   const generateChartData = () => {
+    const now = new Date();
+    
     if (period === 'week') {
-      return [
-        { day: 'Mon', value: 12.3 },
-        { day: 'Tue', value: 8.7 },
-        { day: 'Wed', value: 10.1 },
-        { day: 'Thu', value: 6.5 },
-        { day: 'Fri', value: 5.2 },
-        { day: 'Sat', value: 9.8 },
-        { day: 'Sun', value: 4.3 },
-      ];
+      // Last 7 days
+      const weekData = [];
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(now.getDate() - i);
+        
+        const dayActivities = activities.filter(activity => {
+          const activityDate = new Date(activity.date);
+          return activityDate.toDateString() === date.toDateString();
+        });
+        
+        const totalCarbon = dayActivities.reduce((sum, activity) => sum + activity.carbonImpact, 0);
+        
+        weekData.push({
+          day: dayNames[date.getDay()],
+          value: totalCarbon,
+        });
+      }
+      return weekData;
     } else if (period === 'month') {
-      return Array.from({ length: 4 }, (_, i) => ({
-        day: `Week ${i + 1}`,
-        value: Math.random() * 40 + 10,
-      }));
+      // Last 4 weeks
+      const monthData = [];
+      
+      for (let i = 3; i >= 0; i--) {
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - (i * 7) - 6);
+        const weekEnd = new Date(now);
+        weekEnd.setDate(now.getDate() - (i * 7));
+        
+        const weekActivities = activities.filter(activity => {
+          const activityDate = new Date(activity.date);
+          return activityDate >= weekStart && activityDate <= weekEnd;
+        });
+        
+        const totalCarbon = weekActivities.reduce((sum, activity) => sum + activity.carbonImpact, 0);
+        
+        monthData.push({
+          day: `Week ${4 - i}`,
+          value: totalCarbon,
+        });
+      }
+      return monthData;
     } else {
-      return Array.from({ length: 12 }, (_, i) => {
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return {
-          day: monthNames[i],
-          value: Math.random() * 100 + 50,
-        };
-      });
+      // Last 12 months
+      const yearData = [];
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      for (let i = 11; i >= 0; i--) {
+        const monthDate = new Date(now);
+        monthDate.setMonth(now.getMonth() - i);
+        
+        const monthActivities = activities.filter(activity => {
+          const activityDate = new Date(activity.date);
+          return activityDate.getMonth() === monthDate.getMonth() && 
+                 activityDate.getFullYear() === monthDate.getFullYear();
+        });
+        
+        const totalCarbon = monthActivities.reduce((sum, activity) => sum + activity.carbonImpact, 0);
+        
+        yearData.push({
+          day: monthNames[monthDate.getMonth()],
+          value: totalCarbon,
+        });
+      }
+      return yearData;
     }
   };
 
   const data = generateChartData();
-  const maxValue = Math.max(...data.map(item => item.value));
+  const maxValue = Math.max(...data.map(item => item.value), 1); // Ensure minimum of 1 to avoid division by zero
 
   const getBarColor = (value: number) => {
     if (value <= 5) return Colors.success.main;
@@ -47,32 +96,40 @@ export default function ProgressChart({ period }: ProgressChartProps) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.chart}>
-        {data.map((item, index) => {
-          const barHeight = (item.value / maxValue) * 150;
-          return (
-            <View key={index} style={styles.barContainer}>
-              <View style={styles.barLabelsContainer}>
-                <Text style={styles.barValue}>
-                  {item.value.toFixed(1)}
-                </Text>
+      {data.length === 0 || data.every(item => item.value === 0) ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>
+            No data available for this period
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.chart}>
+          {data.map((item, index) => {
+            const barHeight = Math.max((item.value / maxValue) * 150, 5); // Minimum height of 5
+            return (
+              <View key={index} style={styles.barContainer}>
+                <View style={styles.barLabelsContainer}>
+                  <Text style={styles.barValue}>
+                    {item.value > 0 ? item.value.toFixed(1) : '0'}
+                  </Text>
+                </View>
+                <View style={styles.barWrapper}>
+                  <View
+                    style={[
+                      styles.bar,
+                      {
+                        height: barHeight,
+                        backgroundColor: getBarColor(item.value),
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.barLabel}>{item.day}</Text>
               </View>
-              <View style={styles.barWrapper}>
-                <View
-                  style={[
-                    styles.bar,
-                    {
-                      height: barHeight,
-                      backgroundColor: getBarColor(item.value),
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.barLabel}>{item.day}</Text>
-            </View>
-          );
-        })}
-      </View>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }
@@ -81,6 +138,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'flex-end',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: Colors.text.secondary,
+    textAlign: 'center',
   },
   chart: {
     flexDirection: 'row',
