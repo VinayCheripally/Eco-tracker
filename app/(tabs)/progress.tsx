@@ -17,10 +17,20 @@ export default function ProgressScreen() {
   const { session } = useAuth();
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (session?.user?.id) {
+      fetchData();
+    } else {
+      setIsLoading(false);
+    }
+  }, [session?.user?.id]);
 
   async function fetchData() {
+    if (!session?.user?.id) {
+      console.log('No user session available');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       await Promise.all([
         fetchActivities(),
@@ -34,11 +44,16 @@ export default function ProgressScreen() {
   }
 
   async function fetchActivities() {
+    if (!session?.user?.id) {
+      console.log('No user ID available for fetching activities');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('activities')
         .select('*')
-        .eq('user_id', session?.user?.id)
+        .eq('user_id', session.user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -63,11 +78,16 @@ export default function ProgressScreen() {
   }
 
   async function fetchAchievements() {
+    if (!session?.user?.id) {
+      console.log('No user ID available for fetching achievements');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('achievements')
         .select('*')
-        .eq('user_id', session?.user?.id)
+        .eq('user_id', session.user.id)
         .order('unlocked_on', { ascending: false });
 
       if (error) {
@@ -188,6 +208,22 @@ export default function ProgressScreen() {
         </View>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading your progress...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!session?.user?.id) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Your Progress</Text>
+          <Text style={styles.subtitle}>
+            Track your carbon reduction journey
+          </Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Please log in to view your progress</Text>
         </View>
       </View>
     );

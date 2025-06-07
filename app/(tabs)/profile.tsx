@@ -37,10 +37,20 @@ export default function ProfileScreen() {
   const { session } = useAuth();
 
   useEffect(() => {
-    fetchUserData();
-  }, []);
+    if (session?.user?.id) {
+      fetchUserData();
+    } else {
+      setIsLoading(false);
+    }
+  }, [session?.user?.id]);
 
   async function fetchUserData() {
+    if (!session?.user?.id) {
+      console.log('No user session available');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       await Promise.all([
         fetchProfile(),
@@ -54,11 +64,16 @@ export default function ProfileScreen() {
   }
 
   async function fetchProfile() {
+    if (!session?.user?.id) {
+      console.log('No user ID available for fetching profile');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', session?.user?.id)
+        .eq('id', session.user.id)
         .single();
 
       if (error) {
@@ -77,12 +92,17 @@ export default function ProfileScreen() {
   }
 
   async function fetchStats() {
+    if (!session?.user?.id) {
+      console.log('No user ID available for fetching stats');
+      return;
+    }
+
     try {
       // Fetch activities count
       const { data: activities, error: activitiesError } = await supabase
         .from('activities')
         .select('id, created_at, co2_score')
-        .eq('user_id', session?.user?.id);
+        .eq('user_id', session.user.id);
 
       if (activitiesError) {
         console.error('Error fetching activities:', activitiesError);
@@ -93,7 +113,7 @@ export default function ProfileScreen() {
       const { data: achievements, error: achievementsError } = await supabase
         .from('achievements')
         .select('id')
-        .eq('user_id', session?.user?.id);
+        .eq('user_id', session.user.id);
 
       if (achievementsError) {
         console.error('Error fetching achievements:', achievementsError);
@@ -149,7 +169,7 @@ export default function ProfileScreen() {
   };
 
   const handleSave = async () => {
-    if (!profile) return;
+    if (!profile || !session?.user?.id) return;
 
     setIsSaving(true);
     try {
@@ -159,7 +179,7 @@ export default function ProfileScreen() {
           name: editedName,
           eco_goals: editedEcoGoals || null
         })
-        .eq('id', session?.user?.id);
+        .eq('id', session.user.id);
 
       if (error) {
         Alert.alert('Error', 'Failed to update profile. Please try again.');
@@ -200,6 +220,22 @@ export default function ProfileScreen() {
         </View>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!session?.user?.id) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Profile</Text>
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+            <LogOut size={24} color={Colors.text.inverse} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Please log in to view your profile</Text>
         </View>
       </View>
     );
