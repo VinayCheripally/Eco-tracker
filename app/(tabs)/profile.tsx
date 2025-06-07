@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
 import Colors from '../../constants/Colors';
-import { LogOut, Edit2, Save, X } from 'lucide-react-native';
+import { LogOut, CreditCard as Edit2, Save, X } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
