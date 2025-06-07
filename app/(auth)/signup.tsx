@@ -58,8 +58,6 @@ export default function SignupScreen() {
           .insert({
             id: authData.user.id,
             name: name,
-            email: email,
-            password_hash: '', // This will be handled by Supabase Auth
             eco_goals: null,
             email_verified: false,
             email_verification_token: null,
