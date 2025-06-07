@@ -50,7 +50,7 @@ export default function SignupScreen() {
         setIsLoading(false);
         return;
       }
-
+      console.log(email);
       // If auth signup was successful and we have a user ID, create the profile
       if (authData.user?.id) {
         const { error: profileError } = await supabase
@@ -58,6 +58,7 @@ export default function SignupScreen() {
           .insert({
             id: authData.user.id,
             name: name,
+            email: email,
             eco_goals: null,
             email_verified: false,
             email_verification_token: null,
