@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Linking } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Colors from '../../constants/Colors';
@@ -77,6 +77,11 @@ export default function HomeScreen() {
     setIsRefreshing(true);
     fetchRecentActivities();
   }, [fetchRecentActivities]);
+
+  // Handle Bolt.new badge press
+  const handleBoltPress = useCallback(() => {
+    Linking.openURL('https://bolt.new/');
+  }, []);
   
   // Calculate today's carbon score
   const todayActivities = activities.filter(activity => {
@@ -100,8 +105,19 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hello there!</Text>
-        <Text style={styles.title}>Your Carbon Footprint</Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerText}>
+            <Text style={styles.greeting}>Hello there!</Text>
+            <Text style={styles.title}>Your Carbon Footprint</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.boltBadge} 
+            onPress={handleBoltPress}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.boltBadgeText}>Bolt.new</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       
       <ScrollView 
@@ -183,6 +199,14 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     paddingHorizontal: 20,
   },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  headerText: {
+    flex: 1,
+  },
   greeting: {
     fontSize: 16,
     color: Colors.text.inverse,
@@ -192,6 +216,21 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: Colors.text.inverse,
+  },
+  boltBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    marginLeft: 16,
+  },
+  boltBadgeText: {
+    color: Colors.text.inverse,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   scrollView: {
     flex: 1,
