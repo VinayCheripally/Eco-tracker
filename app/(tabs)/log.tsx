@@ -55,7 +55,7 @@ export default function LogScreen() {
     setIsLoading(true);
 
     try {
-      // Use Gemini-powered carbon calculation
+      // Use AI-powered carbon calculation with rule-based fallback
       const { carbonImpact, category, details } = await calculateCarbonImpact(inputText);
       
       const { data, error } = await supabase
@@ -89,7 +89,7 @@ export default function LogScreen() {
         setActivities([newActivity, ...activities]);
         setInputText('');
         
-        // Show success message with AI details if available
+        // Show success message with analysis details if available
         if (details) {
           Alert.alert(
             'Activity Logged!', 
@@ -111,7 +111,7 @@ export default function LogScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Log Your Activity</Text>
         <Text style={styles.subtitle}>
-          Describe your activity and AI will calculate your carbon footprint
+          Describe your activity and get AI-powered carbon footprint analysis
         </Text>
       </View>
 
@@ -150,19 +150,25 @@ export default function LogScreen() {
         {isLoading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator color={Colors.primary.main} />
-            <Text style={styles.loadingText}>AI is analyzing your activity...</Text>
+            <Text style={styles.loadingText}>
+              {process.env.EXPO_PUBLIC_GEMINI_API_KEY 
+                ? 'AI is analyzing your activity...' 
+                : 'Calculating carbon footprint...'}
+            </Text>
           </View>
         )}
 
         <View style={styles.activitiesListHeader}>
           <Text style={styles.activitiesTitle}>Your Activities</Text>
-          <Text style={styles.aiPoweredText}>🤖 AI-Powered Analysis</Text>
+          <Text style={styles.aiPoweredText}>
+            {process.env.EXPO_PUBLIC_GEMINI_API_KEY ? '🤖 AI-Powered' : '📊 Rule-Based'}
+          </Text>
         </View>
 
         {activities.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
-              No activities logged yet. Start by describing what you did today and let AI calculate your carbon footprint!
+              No activities logged yet. Start by describing what you did today and get instant carbon footprint analysis!
             </Text>
           </View>
         ) : (
