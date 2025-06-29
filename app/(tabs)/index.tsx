@@ -1,16 +1,58 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import Colors from '../../constants/Colors';
 import EcoTip from '../../components/EcoTip';
 import ActivityCard from '../../components/ActivityCard';
-import { mockActivities, mockTips } from '../../data/mockData';
+import { mockTips } from '../../data/mockData';
 import CarbonScoreCard from '../../components/CarbonScoreCard';
+import { supabase } from '../../lib/supabase';
+import { Activity } from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function HomeScreen() {
-  const [activities] = useState(mockActivities.slice(0, 3));
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { session } = useAuth();
+  
   const randomTipIndex = Math.floor(Math.random() * mockTips.length);
   const todaysTip = mockTips[randomTipIndex];
+  
+  useEffect(() => {
+    fetchRecentActivities();
+  }, []);
+
+  async function fetchRecentActivities() {
+    try {
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('user_id', session?.user?.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (error) {
+        console.error('Error fetching activities:', error);
+        return;
+      }
+
+      if (data) {
+        const formattedActivities: Activity[] = data.map(activity => ({
+          id: activity.id,
+          description: activity.description,
+          date: activity.created_at,
+          carbonImpact: activity.co2_score,
+          category: activity.category,
+          createdAt: activity.created_at
+        }));
+        setActivities(formattedActivities);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
   
   // Calculate today's carbon score
   const todayActivities = activities.filter(activity => {

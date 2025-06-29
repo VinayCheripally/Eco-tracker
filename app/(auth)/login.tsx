@@ -26,7 +26,7 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     setError('');
-
+    console.log(email,password);
     const { error } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
@@ -38,16 +38,6 @@ export default function LoginScreen() {
       router.replace('/(tabs)');
     }
     setIsLoading(false);
-
-    // try {
-    //   // TODO: Implement actual login logic with Supabase
-    //   await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-    //   router.replace('/(tabs)');
-    // } catch (err) {
-    //   setError('Invalid email or password');
-    // } finally {
-    //   setIsLoading(false);
-    // }
   };
 
   return (

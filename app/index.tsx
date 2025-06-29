@@ -1,8 +1,18 @@
 import { Redirect } from 'expo-router';
+import { useAuth } from '../contexts/AuthContext';
+import { ActivityIndicator, View } from 'react-native';
+import Colors from '../constants/Colors';
 
 export default function Index() {
-  // TODO: Check authentication status
-  const isAuthenticated = false;
+  const { session, isLoading } = useAuth();
   
-  return <Redirect href={isAuthenticated ? "/(tabs)" : "/login"} />;
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={Colors.primary.main} />
+      </View>
+    );
+  }
+  
+  return <Redirect href={session ? "/(tabs)" : "/login"} />;
 }

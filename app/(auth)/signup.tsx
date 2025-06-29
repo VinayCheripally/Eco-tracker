@@ -33,21 +33,56 @@ export default function SignupScreen() {
     setIsLoading(true);
     setError('');
 
-    const { data, error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-      options: {
-        data: {
-          full_name: name,
+    try {
+      // First, sign up the user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            full_name: name,
+          },
         },
-      },
-    });
-    if (error) {
-      setError('The email is already used.');
-    } else {
-      router.replace('/(tabs)');
+      });
+
+      if (authError) {
+        setError('The email is already used.');
+        setIsLoading(false);
+        return;
+      }
+      console.log(email);
+      // If auth signup was successful and we have a user ID, create the profile
+      if (authData.user?.id) {
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            name: name,
+            email: email,
+            eco_goals: null,
+            email_verified: false,
+            email_verification_token: null,
+            last_sign_in_at: null
+          });
+
+        if (profileError) {
+          console.error('Error creating user profile:', profileError);
+          setError('Failed to create user profile. Please try again.');
+          setIsLoading(false);
+          return;
+        }
+
+        // Success - redirect to main app
+        router.replace('/(tabs)');
+      } else {
+        setError('Failed to create account. Please try again.');
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (

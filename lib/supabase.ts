@@ -6,7 +6,15 @@ import Constants from 'expo-constants';
 
 const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl ?? '';
 const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey ?? '';
-console.log(supabaseUrl);
+
+if (!supabaseUrl) {
+  throw new Error('Missing EXPO_PUBLIC_SUPABASE_URL environment variable');
+}
+
+if (!supabaseAnonKey) {
+  throw new Error('Missing EXPO_PUBLIC_SUPABASE_ANON_KEY environment variable');
+}
+console.log(supabaseUrl,supabaseAnonKey);
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
