@@ -23,7 +23,7 @@ export default {
     icon: './assets/images/icon.png',
     scheme: 'myapp',
     userInterfaceStyle: 'automatic',
-    newArchEnabled: true,
+    newArchEnabled: false, // Temporarily disabled to fix APK crashes
     ios: {
       supportsTablet: true,
     },
