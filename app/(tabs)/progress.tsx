@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import Colors from '../../constants/Colors';
 import ProgressChart from '../../components/ProgressChart';
 import AchievementBadge from '../../components/AchievementBadge';
@@ -14,20 +15,14 @@ export default function ProgressScreen() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { session } = useAuth();
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchData();
-    } else {
-      setIsLoading(false);
-    }
-  }, [session?.user?.id]);
-
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     if (!session?.user?.id) {
       console.log('No user session available');
       setIsLoading(false);
+      setIsRefreshing(false);
       return;
     }
 
@@ -40,10 +35,11 @@ export default function ProgressScreen() {
       console.error('Error fetching data:', error);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
-  }
+  }, [session?.user?.id]);
 
-  async function fetchActivities() {
+  const fetchActivities = useCallback(async () => {
     if (!session?.user?.id) {
       console.log('No user ID available for fetching activities');
       return;
@@ -75,9 +71,9 @@ export default function ProgressScreen() {
     } catch (error) {
       console.error('Error:', error);
     }
-  }
+  }, [session?.user?.id]);
 
-  async function fetchAchievements() {
+  const fetchAchievements = useCallback(async () => {
     if (!session?.user?.id) {
       console.log('No user ID available for fetching achievements');
       return;
@@ -110,10 +106,30 @@ export default function ProgressScreen() {
     } catch (error) {
       console.error('Error:', error);
     }
-  }
+  }, [session?.user?.id]);
+
+  // Fetch data when component mounts
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Refresh data every time the tab comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (session?.user?.id) {
+        fetchData();
+      }
+    }, [fetchData, session?.user?.id])
+  );
+
+  // Handle pull-to-refresh
+  const onRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    fetchData();
+  }, [fetchData]);
 
   // Calculate stats from real activities
-  const calcStats = () => {
+  const calcStats = useCallback(() => {
     const now = new Date();
     const dayMs = 24 * 60 * 60 * 1000;
     const weekMs = 7 * dayMs;
@@ -174,7 +190,7 @@ export default function ProgressScreen() {
       streak: streak,
       improvementRate: improvementRate,
     };
-  };
+  }, [activities]);
 
   const stats = calcStats();
 
@@ -242,6 +258,14 @@ export default function ProgressScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary.main]}
+            tintColor={Colors.primary.main}
+          />
+        }
       >
         <View style={styles.statsCard}>
           <Text style={styles.statsTitle}>Carbon Footprint</Text>
@@ -283,6 +307,9 @@ export default function ProgressScreen() {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Your Achievements</Text>
+          <Text style={styles.achievementCount}>
+            {achievements.length} unlocked
+          </Text>
         </View>
 
         {achievements.length === 0 ? (
@@ -290,12 +317,36 @@ export default function ProgressScreen() {
             <Text style={styles.emptyStateText}>
               No achievements yet. Keep logging activities to unlock achievements!
             </Text>
+            <Text style={styles.emptyStateSubtext}>
+              Pull down to refresh and check for new achievements.
+            </Text>
           </View>
         ) : (
           achievements.map((achievement) => (
             <AchievementBadge key={achievement.id} achievement={achievement} />
           ))
         )}
+
+        {/* Progress Summary */}
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>Progress Summary</Text>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Total activities logged:</Text>
+            <Text style={styles.summaryValue}>{stats.activitiesLogged}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Current streak:</Text>
+            <Text style={[styles.summaryValue, { color: Colors.success.main }]}>
+              {stats.streak} days
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>This month's footprint:</Text>
+            <Text style={[styles.summaryValue, { color: Colors.primary.main }]}>
+              {stats.monthlyFootprint.toFixed(1)} kg CO₂
+            </Text>
+          </View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -327,10 +378,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
   loadingText: {
     fontSize: 16,
     color: Colors.text.secondary,
+    textAlign: 'center',
   },
   scrollView: {
     flex: 1,
@@ -407,6 +460,9 @@ const styles = StyleSheet.create({
     color: Colors.error.main,
   },
   sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 24,
     marginBottom: 12,
   },
@@ -414,6 +470,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: Colors.text.primary,
+  },
+  achievementCount: {
+    fontSize: 14,
+    color: Colors.primary.main,
+    fontWeight: '500',
   },
   emptyState: {
     padding: 24,
@@ -427,5 +488,42 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: Colors.text.secondary,
     fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    textAlign: 'center',
+    color: Colors.text.secondary,
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  summaryCard: {
+    backgroundColor: Colors.accent.extraLight,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 24,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.accent.main,
+  },
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.accent.dark,
+    marginBottom: 12,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: Colors.text.primary,
+  },
+  summaryValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text.primary,
   },
 });
