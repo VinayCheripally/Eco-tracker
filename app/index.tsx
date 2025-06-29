@@ -5,7 +5,6 @@ import Colors from '../constants/Colors';
 
 export default function Index() {
   const { session, isLoading } = useAuth();
-  
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -13,6 +12,5 @@ export default function Index() {
       </View>
     );
   }
-  
-  return <Redirect href={session ? "/(tabs)" : "/login"} />;
+  return <Redirect href={session ? '/(tabs)' : '/(auth)/login'} />;
 }

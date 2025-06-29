@@ -16,6 +16,9 @@ export default {
         projectId: '9e36d89f-6aa3-40aa-bd3d-997c516f6330',
       },
     },
+    splash: {
+      image: './assets/images/icon.png',
+    },
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     scheme: 'myapp',
