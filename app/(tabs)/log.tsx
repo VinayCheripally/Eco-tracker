@@ -55,7 +55,8 @@ export default function LogScreen() {
     setIsLoading(true);
 
     try {
-      const { carbonImpact, category } = calculateCarbonImpact(inputText);
+      // Use Gemini-powered carbon calculation
+      const { carbonImpact, category, details } = await calculateCarbonImpact(inputText);
       
       const { data, error } = await supabase
         .from('activities')
@@ -87,8 +88,18 @@ export default function LogScreen() {
 
         setActivities([newActivity, ...activities]);
         setInputText('');
+        
+        // Show success message with AI details if available
+        if (details) {
+          Alert.alert(
+            'Activity Logged!', 
+            `Carbon impact: ${carbonImpact} kg CO₂\n\n${details}`,
+            [{ text: 'OK' }]
+          );
+        }
       }
     } catch (error) {
+      console.error('Error in handleSubmit:', error);
       Alert.alert('Error', 'Could not process activity. Please try again.');
     } finally {
       setIsLoading(false);
@@ -100,7 +111,7 @@ export default function LogScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Log Your Activity</Text>
         <Text style={styles.subtitle}>
-          Track what you do in your daily life to calculate your carbon footprint
+          Describe your activity and AI will calculate your carbon footprint
         </Text>
       </View>
 
@@ -112,7 +123,7 @@ export default function LogScreen() {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="What did you do today? (e.g., drove 10km, ate beef)"
+            placeholder="What did you do today? (e.g., drove 10km to work, ate a beef burger)"
             placeholderTextColor={Colors.neutral.grey5}
             value={inputText}
             onChangeText={setInputText}
@@ -136,14 +147,22 @@ export default function LogScreen() {
           </TouchableOpacity>
         </View>
 
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator color={Colors.primary.main} />
+            <Text style={styles.loadingText}>AI is analyzing your activity...</Text>
+          </View>
+        )}
+
         <View style={styles.activitiesListHeader}>
           <Text style={styles.activitiesTitle}>Your Activities</Text>
+          <Text style={styles.aiPoweredText}>🤖 AI-Powered Analysis</Text>
         </View>
 
         {activities.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
-              No activities logged yet. Start by describing what you did today!
+              No activities logged yet. Start by describing what you did today and let AI calculate your carbon footprint!
             </Text>
           </View>
         ) : (
@@ -215,13 +234,36 @@ const styles = StyleSheet.create({
   disabledButton: {
     backgroundColor: Colors.neutral.grey4,
   },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: Colors.primary.extraLight,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  loadingText: {
+    marginLeft: 12,
+    fontSize: 14,
+    color: Colors.primary.dark,
+    fontWeight: '500',
+  },
   activitiesListHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
   },
   activitiesTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: Colors.text.primary,
+  },
+  aiPoweredText: {
+    fontSize: 12,
+    color: Colors.primary.main,
+    fontWeight: '600',
   },
   emptyState: {
     padding: 24,
@@ -235,5 +277,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: Colors.text.secondary,
     fontSize: 16,
+    lineHeight: 24,
   },
 });
